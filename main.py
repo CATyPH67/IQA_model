@@ -21,6 +21,9 @@ class ImageQualityApp:
         self.canvas = tk.Canvas(root, width=256, height=256)
         self.canvas.pack()
 
+        self.load_weights_button = tk.Button(root, text="Load Model Weights", command=self.load_weights)
+        self.load_weights_button.pack()
+
         self.upload_button = tk.Button(root, text="Upload Image", command=self.upload_image)
         self.upload_button.pack()
 
@@ -36,6 +39,9 @@ class ImageQualityApp:
     def load_model(self):
         input_shape = (256, 256, 3)
 
+        # base_model_space = models.load_model("base_model_space.h5")
+        # base_model_freq = models.load_model("base_model_freq.h5")
+
         base_model_space = applications.EfficientNetV2S(
             include_top=False,
             weights="imagenet",
@@ -50,9 +56,6 @@ class ImageQualityApp:
             input_shape=input_shape,
             pooling="avg"
         )
-
-        # base_model_space = models.load_model("base_model_space.h5")
-        # base_model_freq = models.load_model("base_model_freq.h5")
 
         # Разаморозка всех слоев предобученной модели
         for layer in base_model_space.layers:
@@ -76,9 +79,14 @@ class ImageQualityApp:
         # Создание новой модели
         model = Model(inputs, outputs)
 
-        # model = models.load_model("/kaggle/input/my-model-konx-double/my_model_konx_double.h5")
-        model.load_weights("my_model_konx_double_weights.weights.h5")
+        model.load_weights("cp_model_efficientnetv2-s.weights.h5")
         return model
+
+    def load_weights(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            self.model.load_weights(file_path)
+            messagebox.showinfo("Weights Loaded", f"Model weights loaded from {file_path}")
 
     def upload_image(self):
         file_path = filedialog.askopenfilename()
@@ -117,11 +125,11 @@ class ImageQualityApp:
             lnorm.adapt(koniq_range)
 
             prediction = self.model.predict(self.img_array)
-            print(prediction[0][0])
+            # print(prediction[0][0])
             prediction = lnorm(prediction)
 
             self.result_label.config(text=f"Predicted Quality Score: {prediction[0][0]:.2f}")
-            print(prediction[0][0])
+            # print(prediction[0][0])
 
             # prediction = self.model.predict(self.img_array)[0][0]
             # self.result_label.config(text=f"Predicted Quality Score: {prediction:.2f}")
